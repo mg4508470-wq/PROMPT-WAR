@@ -1,0 +1,221 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with donor details, location preferences, and rewards customizations",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "city": { "type": "string" },
+        "district": { "type": "string" },
+        "radiusKm": { "type": "integer" },
+        "notificationsEnabled": { "type": "boolean" },
+        "isAvailable": { "type": "boolean" },
+        "isVerifiedDonor": { "type": "boolean" },
+        "role": { "type": "string" },
+        "lastDonationDate": { "type": "string" },
+        "donationCount": { "type": "integer" },
+        "equippedBadge": { "type": "string" },
+        "equippedTheme": { "type": "string" },
+        "equippedFrame": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "email", "phone", "bloodGroup", "city", "district", "createdAt"]
+    },
+    "BloodRequest": {
+      "title": "BloodRequest",
+      "description": "Blood donation emergency request with coordinates for live map",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "requesterId": { "type": "string" },
+        "requesterName": { "type": "string" },
+        "requesterPhone": { "type": "string" },
+        "patientRef": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "units": { "type": "integer" },
+        "hospitalName": { "type": "string" },
+        "hospitalAddress": { "type": "string" },
+        "city": { "type": "string" },
+        "district": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "urgency": { "type": "string" },
+        "requiredDate": { "type": "string" },
+        "requiredTime": { "type": "string" },
+        "status": { "type": "string" },
+        "verifiedBy": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["requesterId", "requesterName", "bloodGroup", "hospitalName", "city", "urgency", "units", "status", "createdAt"]
+    },
+    "Hospital": {
+      "title": "Hospital",
+      "description": "Verified hospital and blood bank locations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "city": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "phone": { "type": "string" },
+        "type": { "type": "string" },
+        "availableBeds": { "type": "integer" }
+      },
+      "required": ["name", "city", "latitude", "longitude", "type"]
+    },
+    "CoinWallet": {
+      "title": "CoinWallet",
+      "description": "Virtual LifeCoins wallet balance for donor rewards",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "balance": { "type": "integer" },
+        "totalEarned": { "type": "integer" },
+        "totalRedeemed": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "balance", "totalEarned", "totalRedeemed"]
+    },
+    "CoinTransaction": {
+      "title": "CoinTransaction",
+      "description": "Transaction entry for earned or redeemed LifeCoins",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "transactionType": { "type": "string" },
+        "amount": { "type": "integer" },
+        "reason": { "type": "string" },
+        "referenceId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "transactionType", "amount", "reason", "createdAt"]
+    },
+    "Reward": {
+      "title": "Reward",
+      "description": "Redeemable item in the LifeCoins store",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "coinPrice": { "type": "integer" },
+        "rewardType": { "type": "string" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "coinPrice", "rewardType", "active"]
+    },
+    "Redemption": {
+      "title": "Redemption",
+      "description": "Claimed reward record by a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "rewardId": { "type": "string" },
+        "rewardTitle": { "type": "string" },
+        "rewardType": { "type": "string" },
+        "coinsSpent": { "type": "integer" },
+        "redemptionStatus": { "type": "string" },
+        "voucherCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "rewardId", "rewardTitle", "coinsSpent", "redemptionStatus", "createdAt"]
+    },
+    "Donation": {
+      "title": "Donation",
+      "description": "Completed or scheduled donation record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "requestId": { "type": "string" },
+        "hospitalName": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "units": { "type": "integer" },
+        "donationDate": { "type": "string" },
+        "status": { "type": "string" },
+        "certificateUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "hospitalName", "bloodGroup", "units", "donationDate", "status", "createdAt"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "Report of fraudulent or suspicious blood request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "reporterId": { "type": "string" },
+        "requestId": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reporterId", "requestId", "reason", "status", "createdAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Admin identity marker",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User account and donor profile information"
+    },
+    "/bloodRequests/{requestId}": {
+      "schema": "BloodRequest",
+      "description": "Blood donation requests created by requesters and verified by admins"
+    },
+    "/hospitals/{hospitalId}": {
+      "schema": "Hospital",
+      "description": "Verified hospitals and blood banks for live map"
+    },
+    "/coinWallets/{userId}": {
+      "schema": "CoinWallet",
+      "description": "Virtual LifeCoins balances"
+    },
+    "/coinTransactions/{transactionId}": {
+      "schema": "CoinTransaction",
+      "description": "Transaction logs for earned and redeemed LifeCoins"
+    },
+    "/rewards/{rewardId}": {
+      "schema": "Reward",
+      "description": "Catalog of available redeemable rewards"
+    },
+    "/redemptions/{redemptionId}": {
+      "schema": "Redemption",
+      "description": "User redemptions of rewards"
+    },
+    "/donations/{donationId}": {
+      "schema": "Donation",
+      "description": "User donation history records"
+    },
+    "/reports/{reportId}": {
+      "schema": "Report",
+      "description": "Reports submitted against suspicious requests"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Registered administrator identifiers"
+    }
+  }
+}

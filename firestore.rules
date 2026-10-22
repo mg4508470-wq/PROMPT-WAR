@@ -1,0 +1,256 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (('email' in request.auth.token) && request.auth.token.email == 'mg4508470@gmail.com' && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 100 &&
+             data.phone is string && data.phone.size() <= 30 &&
+             data.bloodGroup in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] &&
+             data.city is string && data.city.size() <= 100 &&
+             data.district is string && data.district.size() <= 100 &&
+             (!('radiusKm' in data) || data.radiusKm is int) &&
+             (!('notificationsEnabled' in data) || data.notificationsEnabled is bool) &&
+             (!('isAvailable' in data) || data.isAvailable is bool) &&
+             (!('isVerifiedDonor' in data) || data.isVerifiedDonor is bool) &&
+             (!('role' in data) || data.role in ['donor', 'admin', 'hospital']) &&
+             (!('lastDonationDate' in data) || (data.lastDonationDate is string && data.lastDonationDate.size() <= 50)) &&
+             (!('donationCount' in data) || data.donationCount is int) &&
+             (!('equippedBadge' in data) || (data.equippedBadge is string && data.equippedBadge.size() <= 100)) &&
+             (!('equippedTheme' in data) || (data.equippedTheme is string && data.equippedTheme.size() <= 100)) &&
+             (!('equippedFrame' in data) || (data.equippedFrame is string && data.equippedFrame.size() <= 100)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidBloodRequest(data) {
+      return data.requesterId is string && data.requesterId.size() <= 128 &&
+             data.requesterName is string && data.requesterName.size() > 0 && data.requesterName.size() <= 100 &&
+             (!('requesterPhone' in data) || (data.requesterPhone is string && data.requesterPhone.size() <= 30)) &&
+             (!('patientRef' in data) || (data.patientRef is string && data.patientRef.size() <= 100)) &&
+             data.bloodGroup in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] &&
+             data.units is int && data.units > 0 && data.units <= 100 &&
+             data.hospitalName is string && data.hospitalName.size() > 0 && data.hospitalName.size() <= 150 &&
+             (!('hospitalAddress' in data) || (data.hospitalAddress is string && data.hospitalAddress.size() <= 300)) &&
+             data.city is string && data.city.size() > 0 && data.city.size() <= 100 &&
+             (!('district' in data) || (data.district is string && data.district.size() <= 100)) &&
+             (!('latitude' in data) || (data.latitude is number)) &&
+             (!('longitude' in data) || (data.longitude is number)) &&
+             data.urgency in ['Normal', 'Urgent', 'Critical'] &&
+             (!('requiredDate' in data) || (data.requiredDate is string && data.requiredDate.size() <= 50)) &&
+             (!('requiredTime' in data) || (data.requiredTime is string && data.requiredTime.size() <= 50)) &&
+             data.status in ['pending', 'verified', 'fulfilled', 'cancelled', 'rejected'] &&
+             (!('verifiedBy' in data) || (data.verifiedBy is string && data.verifiedBy.size() <= 128)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    function isValidCoinWallet(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.balance is int && data.balance >= 0 &&
+             data.totalEarned is int && data.totalEarned >= 0 &&
+             data.totalRedeemed is int && data.totalRedeemed >= 0;
+    }
+
+    function isValidCoinTransaction(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.transactionType in ['EARN', 'REDEEM'] &&
+             data.amount is int && data.amount > 0 &&
+             data.reason is string && data.reason.size() <= 200 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidReward(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+             data.coinPrice is int && data.coinPrice > 0 &&
+             data.rewardType in ['THEME', 'BADGE', 'FRAME', 'VOUCHER'] &&
+             data.active is bool;
+    }
+
+    function isValidRedemption(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.rewardId is string && data.rewardTitle is string &&
+             data.coinsSpent is int && data.coinsSpent > 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidHospital(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+             data.city is string && data.city.size() <= 100 &&
+             data.latitude is number && data.longitude is number &&
+             data.type in ['hospital', 'blood_bank'];
+    }
+
+    function isValidDonation(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.hospitalName is string && data.hospitalName.size() <= 150 &&
+             data.bloodGroup in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] &&
+             data.units is int && data.units > 0 && data.units <= 20 &&
+             data.donationDate is string && data.donationDate.size() <= 50 &&
+             data.status in ['completed', 'scheduled'] &&
+             (!('requestId' in data) || (data.requestId is string && data.requestId.size() <= 128)) &&
+             (!('certificateUrl' in data) || (data.certificateUrl is string && data.certificateUrl.size() <= 500)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidReport(data) {
+      return data.reporterId is string && data.reporterId.size() <= 128 &&
+             data.requestId is string && data.requestId.size() <= 128 &&
+             data.reason is string && data.reason.size() > 0 && data.reason.size() <= 500 &&
+             data.status in ['open', 'reviewed', 'dismissed'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isUser(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isUser(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       (!('role' in incoming()) || incoming().role == 'donor') &&
+                       isValidUserProfile(incoming());
+      allow update: if (
+        isUser(userId) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        (!('role' in incoming()) || incoming().role == existing().role) &&
+        isValidUserProfile(incoming())
+      ) || isAdmin();
+      allow delete: if isUser(userId) || isAdmin();
+    }
+
+    // Blood Requests Collection
+    match /bloodRequests/{requestId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (
+        resource.data.status == 'verified' ||
+        resource.data.requesterId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() &&
+                       incoming().requesterId == request.auth.uid &&
+                       (incoming().status == 'pending' || isAdmin()) &&
+                       isValidBloodRequest(incoming());
+      allow update: if isSignedIn() && isValidBloodRequest(incoming()) && (
+        isAdmin() ||
+        (existing().requesterId == request.auth.uid &&
+         incoming().requesterId == existing().requesterId &&
+         incoming().createdAt == existing().createdAt &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['units', 'requiredDate', 'requiredTime', 'notes', 'status', 'updatedAt']) &&
+         existing().status != 'cancelled')
+      );
+      allow delete: if isAdmin() || (isSignedIn() && existing().requesterId == request.auth.uid);
+    }
+
+    // Coin Wallets Collection
+    match /coinWallets/{userId} {
+      allow get: if isUser(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isUser(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().balance >= 0 &&
+                       isValidCoinWallet(incoming());
+      allow update: if (
+        isUser(userId) &&
+        incoming().userId == existing().userId &&
+        incoming().balance >= 0 &&
+        isValidCoinWallet(incoming())
+      ) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Coin Transactions Collection
+    match /coinTransactions/{transactionId} {
+      allow get, list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                       incoming().userId == request.auth.uid &&
+                       isValidCoinTransaction(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // Rewards Catalog Collection
+    match /rewards/{rewardId} {
+      allow get, list: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Redemptions Collection
+    match /redemptions/{redemptionId} {
+      allow get, list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                       incoming().userId == request.auth.uid &&
+                       isValidRedemption(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // Hospitals & Blood Banks Collection
+    match /hospitals/{hospitalId} {
+      allow get, list: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Donations Collection
+    match /donations/{donationId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+                       incoming().userId == request.auth.uid &&
+                       isValidDonation(incoming());
+      allow update: if isSignedIn() &&
+                       (existing().userId == request.auth.uid || isAdmin()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidDonation(incoming());
+      allow delete: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+    }
+
+    // Reports Collection
+    match /reports/{reportId} {
+      allow get, list: if isAdmin() || (isSignedIn() && resource.data.reporterId == request.auth.uid);
+      allow create: if isSignedIn() &&
+                       incoming().reporterId == request.auth.uid &&
+                       incoming().status == 'open' &&
+                       isValidReport(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow get: if isSignedIn();
+      allow list, write: if isAdmin();
+    }
+  }
+}
